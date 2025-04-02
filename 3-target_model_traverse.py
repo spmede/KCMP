@@ -34,8 +34,8 @@ from logging_func import *
 import sys
 from pathlib import Path
 paths_to_add = [
-    Path("/data1/yinjinhua/NLP/5-VLLM_MIA/target_model/VL-MIA/MiniGPT-4"),  # for miniGPT4
-    Path("/data1/yinjinhua/NLP/5-VLLM_MIA/target_model/VL-MIA/llama_adapter_v21"),  # for llama adapter
+    Path("/data/yinjinhua/NLP/5-VLLM_MIA/target_model/VL-MIA/MiniGPT-4"),  # for miniGPT4
+    Path("/data/yinjinhua/NLP/5-VLLM_MIA/target_model/VL-MIA/llama_adapter_v21"),  # for llama adapter
 ]
 for custom_path in paths_to_add:
     if str(custom_path) not in sys.path:
@@ -87,7 +87,7 @@ ask_color_PROMPT = {
 
 
 def get_data(data_specific):
-    used_dataset = load_dataset("/data1/yinjinhua/LMdataset/VL-MIA-image", data_specific, split='train')
+    used_dataset = load_dataset("/data/yinjinhua/LMdataset/VL-MIA-image", data_specific, split='train')
     # img_Flickr (600), img_Flickr_10k, img_Flickr_2k, img_dalle (592)
     dataset_length = len(used_dataset)
     # print(dataset_length)
@@ -205,7 +205,7 @@ def load_target_model(args):
     """Loads the target model based on args.target_model"""
 
     if args.target_model == 'llava-v1.5-7b':
-        llava_model_add = '/data1/yinjinhua/LMmodel/liuhaotian_llava-v1.5-7b'
+        llava_model_add = '/data/yinjinhua/LMmodel/liuhaotian_llava-v1.5-7b'
         llava_model_base = None
         llava_model_name = get_model_name_from_path(llava_model_add)
         conv_mode = load_conversation_template(llava_model_name)
@@ -215,7 +215,7 @@ def load_target_model(args):
 
     elif args.target_model == 'MiniGPT4':
         conv_dict = {'pretrain_vicuna0': CONV_VISION_Vicuna0, 'pretrain_llama2': CONV_VISION_LLama2}
-        args.cfg_path = "/data1/yinjinhua/NLP/5-VLLM_MIA/target_model/VL-MIA/MiniGPT-4/eval_configs/minigpt4_llama2_eval.yaml"
+        args.cfg_path = "/data/yinjinhua/NLP/5-VLLM_MIA/target_model/VL-MIA/MiniGPT-4/eval_configs/minigpt4_llama2_eval.yaml"
         args.options = None
         cfg = Config(args)
         miniGPT_model_config = cfg.model_cfg
@@ -228,12 +228,12 @@ def load_target_model(args):
         return miniGPT_model, miniGPT_vis_processor, CONV_VISION
 
     elif args.target_model == 'llama_adapter_v2':
-        llama_dir = '/data1/yinjinhua/LMmodel/yangchen_llama2-7B'
+        llama_dir = '/data/yinjinhua/LMmodel/yangchen_llama2-7B'
         adapter_dir = [
-            '/data1/yinjinhua/NLP/5-VLLM_MIA/target_model/model_weight/LORA-BIAS-7B-v21.pth',  # 默认用这个
-            '/data1/yinjinhua/NLP/5-VLLM_MIA/target_model/model_weight/LORA-BIAS-7B.pth',
-            '/data1/yinjinhua/NLP/5-VLLM_MIA/target_model/model_weight/CAPTION-7B.pth',
-            '/data1/yinjinhua/NLP/5-VLLM_MIA/target_model/model_weight/BIAS-7B.pth',
+            '/data/yinjinhua/NLP/5-VLLM_MIA/target_model/model_weight/LORA-BIAS-7B-v21.pth',  # 默认用这个
+            '/data/yinjinhua/NLP/5-VLLM_MIA/target_model/model_weight/LORA-BIAS-7B.pth',
+            '/data/yinjinhua/NLP/5-VLLM_MIA/target_model/model_weight/CAPTION-7B.pth',
+            '/data/yinjinhua/NLP/5-VLLM_MIA/target_model/model_weight/BIAS-7B.pth',
         ][0] 
         args.adapter_dir = adapter_dir
         llama_adapter_model, llama_adapter_preprocess = llama.load(
@@ -306,7 +306,7 @@ def main(args):
 
 
     # 读取 confuser result
-    confuser_add = f'/data1/yinjinhua/NLP/5-VLLM_MIA/11-obj_color/confuser_res/{args.data_name}/confuser_res.json'
+    confuser_add = f'/data/yinjinhua/NLP/5-VLLM_MIA/11-obj_color/confuser_res/{args.data_name}/confuser_res.json'
     with open(confuser_add, 'r') as f:
         confuser_res = json.load(f)  # keys: ['original_img_id', 'ground_truth_label', 'object_name', 'sam_result']
 
@@ -404,9 +404,9 @@ def main(args):
                         )
 
                     # Add ask obj res to the single_sam_res
-                    single_sam_res['ask_color_ans'] = ask_obj_model_ans
-                    single_sam_res['ask_color_acc'] = ask_obj_model_acc
-                    single_sam_res['ask_color_invalid_info'] = ask_obj_invalid_info
+                    single_sam_res['ask_color_ans'] = ask_color_model_ans
+                    single_sam_res['ask_color_acc'] = ask_color_model_acc
+                    single_sam_res['ask_color_invalid_info'] = ask_color_invalid_info
 
 
                 # Add the updated single_sam_res to the updated list
