@@ -176,8 +176,8 @@ def ordered_choice_query(used_img, true_ans, confuser_options, used_prompt, infe
     return res, acc, invalid_flag
 
 
-def ramdom_choice_query(used_img, true_ans, confuser_options, used_prompt, inference_func, model_dict, args):
-    """Performs ramdom-choice querying and returns results with accuracy."""
+def random_choice_query(used_img, true_ans, confuser_options, used_prompt, inference_func, model_dict, args):
+    """Performs random-choice querying and returns results with accuracy."""
 
     all_options = [true_ans] + confuser_options
     res = []
@@ -350,7 +350,7 @@ def main(args):
                         )
 
                     elif args.ask_type == 'random_choice':
-                        ask_obj_model_ans, ask_obj_model_acc, ask_obj_invalid_info = ramdom_choice_query(
+                        ask_obj_model_ans, ask_obj_model_acc, ask_obj_invalid_info = random_choice_query(
                             used_img=masked_image, 
                             true_ans=single_sam_res['class_name'], 
                             confuser_options=obj_name_distractors, 
@@ -393,7 +393,7 @@ def main(args):
                         )
                     
                     elif args.ask_type == 'random_choice':
-                        ask_color_model_ans, ask_color_model_acc, ask_color_invalid_info = ramdom_choice_query(
+                        ask_color_model_ans, ask_color_model_acc, ask_color_invalid_info = random_choice_query(
                             used_img=grayscale_image_with_box, 
                             true_ans=obj_gt_color, 
                             confuser_options=obj_gt_color_distractors, 
