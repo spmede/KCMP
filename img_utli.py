@@ -105,6 +105,9 @@ def turn_grayscale_image(input_img, manner='1'):
     # method 1
     if manner == 'default':
         gray_image = input_img.convert("L")
+    
+    elif manner == '3channel':
+        gray_image = input_img.convert("L").convert("RGB")
 
     # method 2
     elif manner == 'average':
