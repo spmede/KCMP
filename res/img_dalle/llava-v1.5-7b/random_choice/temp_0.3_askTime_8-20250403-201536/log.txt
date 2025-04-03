@@ -1,0 +1,1 @@
+2025-04-03 20:15:40,521 - INFO - args={'data_name': 'img_dalle', 'target_model': 'llava-v1.5-7b', 'gpu_id': 1, 'temperature': 0.3, 'top_p': 0.9, 'num_gen_token': 32, 'ask_obj_prompt_id': '1', 'ask_color_prompt_id': '1', 'ask_type': 'random_choice', 'ask_time': 8, 'start_pos': None, 'end_pos': None}
