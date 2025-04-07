@@ -145,23 +145,27 @@ def get_obj_name_confuser(qwen_model, qwen_processor, input_img, single_sam_res,
 
 
 common_colors = [
-    "red",      # 红色
-    "blue",     # 蓝色
-    "green",    # 绿色
-    "yellow",   # 黄色
-    "orange",   # 橙色
-    "purple",   # 紫色
-    "pink",     # 粉色
-    "brown",    # 棕色
-    "black",    # 黑色
-    "white",    # 白色
-    "cyan",     # 青色
-    "magenta",  # 品红
-    "gold",     # 金色
-    "silver",   # 银色
-    "olive",    # 橄榄绿
-    "coral"     # 珊瑚色
-    ]
+    "red",             # 红色
+    "blue",            # 蓝色
+    "green",           # 绿色
+    "yellow",          # 黄色
+    "orange",          # 橙色
+    "purple",          # 紫色
+    "pink",            # 粉色
+    "brown",           # 棕色
+    "black",           # 黑色
+    "white",           # 白色
+    "cyan",            # 青色
+    "magenta",         # 品红
+    "gold",            # 金色
+    "silver",          # 银色
+    "olive",           # 橄榄绿
+    "coral",           # 珊瑚色
+    "clear",           # 透明色
+    "gray",            # 灰色
+    "tan",             # 米色
+    "black and white", # 黑白
+]
 
 def get_true_obj_color(qwen_model, qwen_processor, input_img, single_sam_res, ask_time=5, max_retries=3):
     
