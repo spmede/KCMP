@@ -1,5 +1,3 @@
-
-
 '''
 2025.4.2
 ask_obj + ask_color
@@ -34,8 +32,8 @@ from logging_func import *
 import sys
 from pathlib import Path
 paths_to_add = [
-    Path("/data/yinjinhua/NLP/5-VLLM_MIA/target_model/VL-MIA/MiniGPT-4"),  # for miniGPT4
-    Path("/data/yinjinhua/NLP/5-VLLM_MIA/target_model/VL-MIA/llama_adapter_v21"),  # for llama adapter
+    Path("/data1/yinjinhua/NLP/5-VLLM_MIA/target_model/VL-MIA/MiniGPT-4"),  # for miniGPT4
+    Path("/data1/yinjinhua/NLP/5-VLLM_MIA/target_model/VL-MIA/llama_adapter_v21"),  # for llama adapter
 ]
 for custom_path in paths_to_add:
     if str(custom_path) not in sys.path:
@@ -87,36 +85,76 @@ ask_color_PROMPT = {
 
 
 def get_data(data_specific):
-    used_dataset = load_dataset("/data/yinjinhua/LMdataset/VL-MIA-image", data_specific, split='train')
+    used_dataset = load_dataset("/data1/yinjinhua/LMdataset/VL-MIA-image", data_specific, split='train')
     # img_Flickr (600), img_Flickr_10k, img_Flickr_2k, img_dalle (592)
     dataset_length = len(used_dataset)
     # print(dataset_length)
     return used_dataset, dataset_length
 
 
-def minigpt_inference(model_dict, input_query, img, args, do_sample=True):
-
+def fast_minigpt_inference(model_dict, input_query, img, args, do_sample=True):
+    """优化的MiniGPT4推理函数"""
     minigpt_model = model_dict['model']
     vis_processor = model_dict['processor']
     CONV_VISION = model_dict['CONV_VISION']
-
-    chat = Interact(minigpt_model, vis_processor, device=f'cuda:{(args.gpu_id)}')
-    img_list = []
+    device = f'cuda:{(args.gpu_id)}'
+    
+    # 初始化缓存
+    if 'image_features_cache' not in model_dict:
+        model_dict['image_features_cache'] = {}
+    if 'response_cache' not in model_dict:
+        model_dict['response_cache'] = {}
+    
+    # 创建缓存键
+    img_hash = hash(img.tobytes())
+    cache_key = (img_hash, input_query)
+    
+    # 检查结果缓存
+    if cache_key in model_dict['response_cache']:
+        return model_dict['response_cache'][cache_key]
+    
+    # 创建对话状态
     chat_state = CONV_VISION.copy()
-    llm_message = chat.upload_img(img, chat_state, img_list)
-    chat.encode_img(img_list)
-    chat.ask(input_query, chat_state)
-
-    gen_ = chat.get_generate_output(conv=chat_state,
-                                    img_list=img_list,
-                                    max_new_tokens=args.num_gen_token,
-                                    do_sample=do_sample,
-                                    temperature=args.temperature,
-                                    top_p=args.top_p
-                                    )
-    output_text = chat.model.llama_tokenizer.decode(gen_[0], skip_special_tokens=True)
-
-    return output_text
+    chat_state.append_message(chat_state.roles[0], "<Img><ImageHere></Img>")
+    chat_state.append_message(chat_state.roles[0], input_query)
+    chat_state.append_message(chat_state.roles[1], None)
+    prompt = chat_state.get_prompt()
+    
+    with torch.no_grad():
+        # 检查图像特征缓存
+        if img_hash in model_dict['image_features_cache']:
+            # 直接使用缓存的特征
+            img_embeds, atts_img = model_dict['image_features_cache'][img_hash]
+        else:
+            # 处理图像并缓存特征
+            processed_img = vis_processor(img).unsqueeze(0).to(device)
+            img_embeds, atts_img = minigpt_model.encode_img(processed_img)
+            model_dict['image_features_cache'][img_hash] = (img_embeds, atts_img)
+        
+        # 获取上下文嵌入
+        embs, _ = minigpt_model.get_context_emb(prompt, [img_embeds])
+        
+        # 生成回答
+        outputs = minigpt_model.llama_model.generate(
+            inputs_embeds=embs,
+            max_new_tokens=args.num_gen_token,
+            do_sample=do_sample,
+            temperature=args.temperature,
+            top_p=args.top_p
+        )
+        
+        response = minigpt_model.llama_tokenizer.decode(outputs[0], skip_special_tokens=True)
+    
+    # 缓存结果
+    model_dict['response_cache'][cache_key] = response
+    
+    # 管理缓存大小
+    if len(model_dict['image_features_cache']) > 100:
+        model_dict['image_features_cache'].clear()
+    if len(model_dict['response_cache']) > 1000:
+        model_dict['response_cache'].clear()
+    
+    return response
 
 
 def llama_adapter_inference(model_dict, input_query, img, args):
@@ -160,6 +198,7 @@ def ordered_choice_query(used_img, true_ans, confuser_options, used_prompt, infe
 
             # Dynamically call the correct inference function
             raw_answer = inference_func(model_dict, prompt, used_img, args)
+            # print(raw_answer) # 查看模型原始回答,调试用
 
             matched_options = [opt for opt in all_options if re.search(re.escape(str(opt)), raw_answer.lower())]
             if len(matched_options) == 1:
@@ -205,7 +244,7 @@ def load_target_model(args):
     """Loads the target model based on args.target_model"""
 
     if args.target_model == 'llava-v1.5-7b':
-        llava_model_add = '/data/yinjinhua/LMmodel/liuhaotian_llava-v1.5-7b'
+        llava_model_add = '/data1/yinjinhua/LMmodel/liuhaotian_llava-v1.5-7b'
         llava_model_base = None
         llava_model_name = get_model_name_from_path(llava_model_add)
         conv_mode = load_conversation_template(llava_model_name)
@@ -215,7 +254,7 @@ def load_target_model(args):
 
     elif args.target_model == 'MiniGPT4':
         conv_dict = {'pretrain_vicuna0': CONV_VISION_Vicuna0, 'pretrain_llama2': CONV_VISION_LLama2}
-        args.cfg_path = "/data/yinjinhua/NLP/5-VLLM_MIA/target_model/VL-MIA/MiniGPT-4/eval_configs/minigpt4_llama2_eval.yaml"
+        args.cfg_path = "/data1/yinjinhua/NLP/5-VLLM_MIA/target_model/VL-MIA/MiniGPT-4/eval_configs/minigpt4_llama2_eval.yaml"
         args.options = None
         cfg = Config(args)
         miniGPT_model_config = cfg.model_cfg
@@ -228,12 +267,12 @@ def load_target_model(args):
         return miniGPT_model, miniGPT_vis_processor, CONV_VISION
 
     elif args.target_model == 'llama_adapter_v2':
-        llama_dir = '/data/yinjinhua/LMmodel/yangchen_llama2-7B'
+        llama_dir = '/data1/yinjinhua/LMmodel/LLaMA/'
         adapter_dir = [
-            '/data/yinjinhua/NLP/5-VLLM_MIA/target_model/model_weight/LORA-BIAS-7B-v21.pth',  # 默认用这个
-            '/data/yinjinhua/NLP/5-VLLM_MIA/target_model/model_weight/LORA-BIAS-7B.pth',
-            '/data/yinjinhua/NLP/5-VLLM_MIA/target_model/model_weight/CAPTION-7B.pth',
-            '/data/yinjinhua/NLP/5-VLLM_MIA/target_model/model_weight/BIAS-7B.pth',
+            '/data1/yinjinhua/NLP/5-VLLM_MIA/target_model/model_weight/LORA-BIAS-7B-v21.pth',  # 默认用这个
+            '/data1/yinjinhua/NLP/5-VLLM_MIA/target_model/model_weight/LORA-BIAS-7B.pth',
+            '/data1/yinjinhua/NLP/5-VLLM_MIA/target_model/model_weight/CAPTION-7B.pth',
+            '/data1/yinjinhua/NLP/5-VLLM_MIA/target_model/model_weight/BIAS-7B.pth',
         ][0] 
         args.adapter_dir = adapter_dir
         llama_adapter_model, llama_adapter_preprocess = llama.load(
@@ -273,12 +312,12 @@ def main(args):
             "model": llava_model,
             "tokenizer": llava_tokenizer,
             "image_processor": llava_image_processor,
-            "conv_mode": conv_mode
+            "conv_mode": conv_mode,
             }
         
     elif args.target_model == 'MiniGPT4':
         miniGPT_model, miniGPT_vis_processor, CONV_VISION = model_components
-        model_dict = {"model": miniGPT_model, "processor": miniGPT_vis_processor, 'CONV_VISION': CONV_VISION}
+        model_dict = {"model": miniGPT_model, "processor": miniGPT_vis_processor, 'CONV_VISION': CONV_VISION, 'chat': None}
 
     elif args.target_model == 'llama_adapter_v2':
         llama_adapter_model, llama_adapter_preprocess = model_components
@@ -287,7 +326,7 @@ def main(args):
     # Define the inference function mapping
     inference_function = {
         'llava-v1.5-7b': llava_inference,
-        'MiniGPT4': minigpt_inference,
+        'MiniGPT4': fast_minigpt_inference,
         'llama_adapter_v2': llama_adapter_inference
         }[args.target_model]
 
@@ -306,7 +345,7 @@ def main(args):
 
 
     # 读取 confuser result
-    confuser_add = f'/data/yinjinhua/NLP/5-VLLM_MIA/11-obj_color/confuser_res/{args.data_name}/confuser_res.json'
+    confuser_add = f'/data1/yinjinhua/NLP/5-VLLM_MIA/MISEP/confuser_res/{args.data_name}/confuser_res.json'
     with open(confuser_add, 'r') as f:
         confuser_res = json.load(f)  # keys: ['original_img_id', 'ground_truth_label', 'object_name', 'sam_result']
 
@@ -438,8 +477,8 @@ def args_parse():
     parser.add_argument('--top_p', default=0.9, type=float, help='generation param')
     parser.add_argument('--num_gen_token', default=32, type=int, help='generation param')
 
-    parser.add_argument("--ask_obj_prompt_id", type=str, default=1, help='used prompt for ask obj')
-    parser.add_argument("--ask_color_prompt_id", type=str, default=1, help='used prompt for ask color')
+    parser.add_argument("--ask_obj_prompt_id", type=str, default='1', help='used prompt for ask obj')
+    parser.add_argument("--ask_color_prompt_id", type=str, default='1', help='used prompt for ask color')
 
     parser.add_argument("--ask_type", type=str, default='ordered_choice', 
                         choices=['ordered_choice', 'random_choice'])
@@ -466,7 +505,9 @@ if __name__ == "__main__":
     main(args)
 
 
-# python 3-target_model_traverse.py --data_name img_Flickr --target_model llava-v1.5-7b --gpu_id 1 --temperature 0.3 --top_p 0.9 --ask_type ordered_choice --start_pos 0 --end_pos 1
+# python 3-target_model_traverse.py --data_name img_Flickr --target_model MiniGPT4 --gpu_id 2 --temperature 0.3 --top_p 0.9 --ask_type ordered_choice --start_pos 0 --end_pos 10
+# python 3-target_model_traverse.py --data_name img_Flickr --target_model llama_adapter_v2 --gpu_id 2 --temperature 0.3 --top_p 0.9 --ask_type ordered_choice --start_pos 0 --end_pos 10
+
 
 # python 3-target_model_traverse.py --data_name img_Flickr --target_model llava-v1.5-7b --gpu_id 1 --temperature 0.3 --top_p 0.9 --ask_type random_choice --ask_time 10 --start_pos 0 --end_pos 1
 
