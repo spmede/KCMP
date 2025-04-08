@@ -102,16 +102,9 @@ def fast_minigpt_inference(model_dict, input_query, img, args, do_sample=True):
     # 初始化缓存
     if 'image_features_cache' not in model_dict:
         model_dict['image_features_cache'] = {}
-    if 'response_cache' not in model_dict:
-        model_dict['response_cache'] = {}
     
-    # 创建缓存键
+    # 创建图像缓存键
     img_hash = hash(img.tobytes())
-    cache_key = (img_hash, input_query)
-    
-    # 检查结果缓存
-    if cache_key in model_dict['response_cache']:
-        return model_dict['response_cache'][cache_key]
     
     # 创建对话状态
     chat_state = CONV_VISION.copy()
@@ -145,34 +138,60 @@ def fast_minigpt_inference(model_dict, input_query, img, args, do_sample=True):
         
         response = minigpt_model.llama_tokenizer.decode(outputs[0], skip_special_tokens=True)
     
-    # 缓存结果
-    model_dict['response_cache'][cache_key] = response
-    
     # 管理缓存大小
     if len(model_dict['image_features_cache']) > 100:
         model_dict['image_features_cache'].clear()
-    if len(model_dict['response_cache']) > 1000:
-        model_dict['response_cache'].clear()
     
     return response
 
 
-def llama_adapter_inference(model_dict, input_query, img, args):
-
+def fast_llama_adapter_inference(model_dict, input_query, img, args):
+    """优化的LLaMA-Adapter推理函数"""
     model = model_dict['model']
     preprocess = model_dict['preprocess']
-
-    device = 'cuda:{}'.format(args.gpu_id)
-    prompt = llama.format_prompt(input_query)
-    img = preprocess(img).unsqueeze(0).to(device)
-
-    output_text = model.generate(img, 
-                                 [prompt], 
-                                 max_gen_len=args.num_gen_token, 
-                                 temperature=args.temperature, 
-                                 top_p=args.top_p,
-                                 device=device)[0]
-
+    device = f'cuda:{args.gpu_id}'
+    
+    # 初始化缓存
+    if 'image_cache' not in model_dict:
+        model_dict['image_cache'] = {}
+    if 'prompt_cache' not in model_dict:
+        model_dict['prompt_cache'] = {}
+    
+    # 创建图像缓存键
+    img_hash = hash(img.tobytes())
+    
+    # 缓存prompt格式化
+    if input_query in model_dict['prompt_cache']:
+        prompt = model_dict['prompt_cache'][input_query]
+    else:
+        prompt = llama.format_prompt(input_query)
+        model_dict['prompt_cache'][input_query] = prompt
+    
+    with torch.no_grad():
+        # 检查图像缓存
+        if img_hash in model_dict['image_cache']:
+            processed_img = model_dict['image_cache'][img_hash]
+        else:
+            # 处理图像并缓存
+            processed_img = preprocess(img).unsqueeze(0).to(device)
+            model_dict['image_cache'][img_hash] = processed_img
+        
+        # 生成回答
+        output_text = model.generate(
+            processed_img,
+            [prompt],
+            max_gen_len=args.num_gen_token,
+            temperature=args.temperature,
+            top_p=args.top_p,
+            device=device
+        )[0]
+    
+    # 管理缓存大小
+    if len(model_dict['image_cache']) > 100:
+        model_dict['image_cache'].clear()
+    if len(model_dict['prompt_cache']) > 1000:
+        model_dict['prompt_cache'].clear()
+    
     return output_text
 
 
@@ -327,7 +346,7 @@ def main(args):
     inference_function = {
         'llava-v1.5-7b': llava_inference,
         'MiniGPT4': fast_minigpt_inference,
-        'llama_adapter_v2': llama_adapter_inference
+        'llama_adapter_v2': fast_llama_adapter_inference
         }[args.target_model]
 
 
