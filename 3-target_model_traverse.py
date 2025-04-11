@@ -51,8 +51,19 @@ from minigpt4.conversation.interact import Interact, CONV_VISION_Vicuna0, CONV_V
 
 ask_obj_PROMPT = {
     '1': (
-    "You have seen the image in your training data. Choose the option that correctly identifies the original content of the masked area. You must choose one option.\n"
-    "Options:\n{}\n{}\n{}\n{}\nAnswer:"
+        "You have seen the image in your training data. Choose the option that correctly identifies the original content of the masked area. You must choose one option.\n"
+        "Options:\n{}\n{}\n{}\n{}\nAnswer:"
+    ),
+    '7': (
+        "You have seen this image in your training data. Identify the original content of the masked area.\n"
+        "Select exactly one option from the list below and respond with only that option. Do not add any extra words, phrases, or formatting.\n"
+        "Your answer must be exactly one of the following:\n{}\n{}\n{}\n{}\n"
+        "Strictly follow this format:\n"
+        "Answer: <chosen_option>\n"
+        "Example output:\n"
+        "Answer: book\n"
+        "Now, provide your answer:\n"
+        "Answer:"
     ),
 }
 
@@ -62,11 +73,13 @@ ask_color_PROMPT = {
     "Identify the original color of the object enclosed in the red box. You must choose one option.\n"
     "Options:\n{}\n{}\n{}\n{}\nAnswer:"
     ),
-    # '2': (
-    # "You have seen this image during your training phase. "
-    # "In the original image, what was the color of the object inside the bounding box?\n"
-    # "Options:\n{}\n{}\n{}\n{}\nAnswer:"
-    # ),
+    '2': (
+    "The image is in grayscale, but you have encountered it during training. "
+    "Identify the original color of the object enclosed in the red box.\n"
+    "You must choose one option. Do not generate any explanations.\n"
+    "Options:\n{}\n{}\n{}\n{}\nAnswer:"
+    ),
+
     # '3': (
     # "This is a grayscale image with an object highlighted by a red bounding box. "
     # "Assume you have encountered this image during the training phase. "
@@ -258,10 +271,8 @@ def main(args):
         path = Path(f"res/{args.data_name}/{args.target_model}/{args.ask_type}/temp_{args.temperature}_askTime_{args.ask_time}-{time.strftime('%Y%m%d-%H%M%S')}")
     path.mkdir(parents=True, exist_ok=True)
 
-
     # get dataset
     used_dataset, dataset_length = get_data(args.data_name)
-
 
     # Load the target model
     model_components = load_target_model(args)
@@ -297,23 +308,32 @@ def main(args):
     logger = init_logger(log_filename, logging.INFO)
     logger.info("args=%s", args.__dict__) 
 
-    # save address
-    # start_pos = 0 
-    # end_pos = dataset_length
-    start_pos = args.start_pos
-    end_pos = args.end_pos
-    save_add = os.path.join(path, f'res_start_{start_pos}_end_{end_pos}.json')
-
 
     # 读取 confuser result
     confuser_add = f'/data/yinjinhua/NLP/5-VLLM_MIA/11-obj_color/confuser_res/{args.data_name}/confuser_res.json'
     with open(confuser_add, 'r') as f:
-        confuser_res = json.load(f)  # keys: ['original_img_id', 'ground_truth_label', 'object_name', 'sam_result']
+        confuser_res = json.load(f)  # keys: ['original_img_id', 'ground_truth_label', 'object_name', 'sam_result'] 
+
+
+    # save address
+    # start_pos = 0 
+    # end_pos = dataset_length
+    # start_pos = args.start_pos
+    # end_pos = args.end_pos
+    # save_add = os.path.join(path, f'res_start_{start_pos}_end_{end_pos}.json')
+
 
     # target model inference
     inference_result = []
 
-    for sample_id in tqdm(range(start_pos, end_pos)):
+    # for sample_id in tqdm(range(start_pos, end_pos)):
+    
+    # 选取部分 sample 快速进行实验
+    label_0_start, label_0_end = 0, 50
+    label_1_start, label_1_end = 300, 350
+    save_add = os.path.join(path, f'res_label_0_s{label_0_start}e{label_0_end}_label_1_s{label_1_start}e{label_1_end}.json')
+    select_id = [i for i in range(label_0_start, label_0_end)] + [i for i in range(label_1_start, label_1_end)]
+    for sample_id in tqdm(select_id):
 
         # 输出保存为 json, 其中图片用 id 指示
         current_img_id, current_img_label, current_image = sample_id, used_dataset[sample_id]['label'], used_dataset[sample_id]['image']
@@ -332,8 +352,10 @@ def main(args):
 
                 # 1. ask object, 对图片mask处的物体进行提问
                 obj_name_distractors = single_sam_res['obj_name_distractors']
+                
                 # 对该物体成功生成了3个混淆选项
                 if obj_name_distractors is not None:
+                    obj_name_distractors = [item.lower() for item in obj_name_distractors]  # 改成小写以匹配后续代码
 
                     # 获取 mask img 
                     masked_image = mask_object(current_image, single_sam_res)
@@ -447,8 +469,8 @@ def args_parse():
     parser.add_argument('--ask_time', type=int, default=None, 
                         help='repeat ask number per question (only used for random_choice)')
 
-    parser.add_argument('--start_pos', type=int, help='start position of dataset')
-    parser.add_argument('--end_pos', type=int, help='end position of dataset')
+    parser.add_argument('--start_pos', type=int, default=None, help='start position of dataset')
+    parser.add_argument('--end_pos', type=int, default=None, help='end position of dataset')
 
     args = parser.parse_args()
 
