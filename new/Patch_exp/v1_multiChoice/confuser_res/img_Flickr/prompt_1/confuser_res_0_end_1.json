@@ -1,0 +1,65 @@
+[
+    {
+        "img_id": 0,
+        "ground_truth_label": 0,
+        "questions": [
+            {
+                "perm": [
+                    3,
+                    2,
+                    8,
+                    4,
+                    7,
+                    6,
+                    5,
+                    0,
+                    1
+                ],
+                "gt_caption": "A collection of handcrafted ceramic bowls, each with unique glaze patterns and designs, displayed on clear acrylic stands against a neutral background.",
+                "confusers": [
+                    "A collection of ceramic bowls displayed on a white surface, showcasing their intricate designs and glazes in various colors and patterns.",
+                    "A collection of ceramic bowls displayed on a white surface, showcasing various designs and glazes with earthy tones and abstract patterns.",
+                    "A collection of handcrafted ceramic bowls, each with unique glazes and designs, displayed on a white surface. The bowls vary in color, including shades of green, blue, and brown, and some feature subtle patterns or motifs. The arrangement highlights the artisanal quality and individuality of each piece."
+                ]
+            },
+            {
+                "perm": [
+                    2,
+                    3,
+                    6,
+                    8,
+                    4,
+                    5,
+                    7,
+                    1,
+                    0
+                ],
+                "gt_caption": "A collection of handcrafted ceramic bowls, each with unique glaze patterns and designs, displayed on clear acrylic stands against a neutral background.",
+                "confusers": [
+                    "A collection of handcrafted ceramic bowls displayed on stands, showcasing a variety of colors and designs, including earthy tones, abstract patterns, and subtle glazes. Each piece reflects the artisanal craftsmanship and attention to detail in their creation.",
+                    "A collection of handmade ceramic bowls is displayed on a white surface, showcasing a variety of designs and glazes. Each bowl features unique patterns and colors, ranging from earthy greens and browns to subtle blues and whites, highlighting the artisanal craftsmanship and creativity involved in their creation.",
+                    "A collection of handcrafted ceramic bowls, each with unique glazes and designs, displayed on stands against a neutral background. The variety in colors and patterns showcases the artisanal craftsmanship involved in their creation."
+                ]
+            },
+            {
+                "perm": [
+                    5,
+                    4,
+                    2,
+                    7,
+                    1,
+                    0,
+                    6,
+                    8,
+                    3
+                ],
+                "gt_caption": "A collection of handcrafted ceramic bowls, each with unique glaze patterns and designs, displayed on clear acrylic stands against a neutral background.",
+                "confusers": [
+                    "A collection of ceramic bowls displayed in various angles and lighting, showcasing their intricate designs and textures against a simple white background.",
+                    "A collection of ceramic bowls arranged in a grid, showcasing various colors and glazes, with some featuring abstract designs or patterns. The bowls are displayed against a neutral background, highlighting their unique textures and finishes.",
+                    "A collection of ceramic bowls with unique designs and colors, displayed on a clean, white surface. The bowls vary in shape and size, showcasing intricate patterns and glazes that highlight their artistic craftsmanship."
+                ]
+            }
+        ]
+    }
+]

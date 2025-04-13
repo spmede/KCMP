@@ -3,7 +3,7 @@
 import torch
 from .image_utils import load_images
 from .path_utils import add_to_syspath
-add_to_syspath("/data1/yinjinhua/NLP/5-VLLM_MIA/target_model/VL-MIA")
+add_to_syspath("/data/yinjinhua/NLP/5-VLLM_MIA/target_model/VL-MIA")
 # from llava.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN, IMAGE_PLACEHOLDER
 # from llava.mm_utils import process_images, tokenizer_image_token
 # from llava.conversation import conv_templates

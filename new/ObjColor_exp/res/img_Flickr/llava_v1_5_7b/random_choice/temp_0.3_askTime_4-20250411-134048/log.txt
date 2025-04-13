@@ -1,0 +1,18 @@
+2025-04-11 13:40:53,979 - INFO - args=
+{
+    "data_name": "img_Flickr",
+    "target_model": "llava_v1_5_7b",
+    "gpu_id": 0,
+    "temperature": 0.3,
+    "top_p": 0.9,
+    "num_gen_token": 32,
+    "ask_obj_prompt_id": 2,
+    "ask_color_prompt_id": 2,
+    "confuser_json": "/data/yinjinhua/NLP/5-VLLM_MIA/12-batch_codebase/ObjColor_exp/confuser_res/img_Flickr/confuser_res.json",
+    "ask_type": "random_choice",
+    "ask_time": 4,
+    "batch_size": 10,
+    "query_block_size": 50,
+    "start_pos": 0,
+    "end_pos": 3
+}

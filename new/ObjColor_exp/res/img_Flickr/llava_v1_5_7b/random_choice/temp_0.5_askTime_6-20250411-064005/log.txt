@@ -1,0 +1,27 @@
+2025-04-11 06:40:15,987 - INFO - args=
+{
+    "data_name": "img_Flickr",
+    "target_model": "llava_v1_5_7b",
+    "gpu_id": 0,
+    "temperature": 0.5,
+    "top_p": 0.9,
+    "num_gen_token": 32,
+    "ask_obj_prompt_id": 2,
+    "ask_color_prompt_id": 2,
+    "confuser_json": "/public/bupt_data/wangwd/yinjinhua/NLP/5-VLLM_MIA/12-batch_codebase/ObjColor_exp/confuser_res/img_Flickr/confuser_res.json",
+    "ask_type": "random_choice",
+    "ask_time": 6,
+    "batch_size": 16,
+    "query_block_size": 50
+}
+2025-04-11 07:20:02,318 - INFO - [INFO] Inference complete. Consuming 39min 46sec. Results saved to: ObjColor_exp/res/img_Flickr/llava_v1_5_7b/random_choice/temp_0.5_askTime_6-20250411-064005/res_start_0_end_600.json
+2025-04-11 07:20:02,318 - INFO - 
+>>> AUC Summary (ignore_invalid=False)
+2025-04-11 07:20:02,402 - INFO -   ask_obj    | AUC: 0.5894 | label0: 298 | label1: 300
+2025-04-11 07:20:02,402 - INFO -   ask_color  | AUC: 0.5042 | label0: 297 | label1: 299
+2025-04-11 07:20:02,402 - INFO -   both       | AUC: 0.5771 | label0: 298 | label1: 300
+2025-04-11 07:20:02,402 - INFO - 
+>>> AUC Summary (ignore_invalid=True)
+2025-04-11 07:20:02,731 - INFO -   ask_obj    | AUC: 0.5560 | label0: 80 | label1: 133
+2025-04-11 07:20:02,731 - INFO -   ask_color  | AUC: N/A       | label0: 0 | label1: 0
+2025-04-11 07:20:02,731 - INFO -   both       | AUC: 0.7500 | label0: 3 | label1: 4

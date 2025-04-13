@@ -3,7 +3,7 @@ import torch
 from PIL import Image
 
 from .path_utils import add_to_syspath
-add_to_syspath("/data1/yinjinhua/NLP/5-VLLM_MIA/target_model/VL-MIA/llama_adapter_v21")
+add_to_syspath("/data/yinjinhua/NLP/5-VLLM_MIA/target_model/VL-MIA/llama_adapter_v21")
 import llama
 
 

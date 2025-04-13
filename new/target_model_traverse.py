@@ -17,7 +17,6 @@ from infer_utili.image_utils import mask_object, box_object, turn_grayscale_imag
 from infer_utili import llava_batch_inference, minigpt4_batch_inference, llama_adapter_batch_inference
 
 
-
 PROMPT_TEMPLATES = {
     'ask_obj': {
         '1': (
@@ -86,6 +85,7 @@ def extract_valid_answer(text, options):
     matched = [opt for opt in options if re.search(rf"\b{re.escape(opt)}\b", text.lower())]
     return matched[0] if len(matched) == 1 else None
 
+
 def safe_extract_answer(text, options):
     text = text.strip().lower()
     options = [opt.lower() for opt in options]
@@ -109,6 +109,7 @@ def safe_extract_answer(text, options):
             return opt
 
     return None
+
 
 def prepare_all_queries(img_id, sam, prompt_type, prompt_template, ask_type, ask_time):
     from random import shuffle
@@ -155,17 +156,17 @@ def run_batch_query_with_retry(queries, inference_func, model_dict, dataset, arg
     valid_flags = [False for _ in range(total_queries)]
     retry_counts = [0 for _ in range(total_queries)]
     index_map = list(range(total_queries))
+    failed_query_count = 0
+    failed_img_ids = set()
 
     # pbar = tqdm(total=total_queries, desc="[Inference Progress]")  # 一批内是否加进度条
     remaining = queries[:]
     current_index_map = index_map[:]
 
     while remaining:
-        batch_prompts = []
-        batch_images = []
-        batch_indices = []
+        batch_prompts, batch_images, batch_indices = [], [], []
 
-        # batch_options = [] # 自己加的
+        batch_options = [] # 自己加的
 
         for i, q in enumerate(remaining):
             image = dataset[q['img_id']]['image']
@@ -180,7 +181,8 @@ def run_batch_query_with_retry(queries, inference_func, model_dict, dataset, arg
             batch_prompts.append(q['prompt'])
             batch_images.append(image)
             batch_indices.append(current_index_map[i])
-            # batch_options.append(q['options']) # 自己加的
+
+            batch_options.append(q['options']) # 自己加的
 
             # 满一批就推理
             if len(batch_prompts) == args.batch_size or i == len(remaining) - 1:
@@ -193,22 +195,25 @@ def run_batch_query_with_retry(queries, inference_func, model_dict, dataset, arg
                     retry_counts[idx] += 1
                     final_outputs[idx].append(res)
 
+                    if res == "[GENERATION_FAILED]":  # 该 query 触发 miniGPT4 错误
+                        failed_query_count += 1
+                        failed_img_ids.add(queries[idx]['img_id'])
+                        continue
+
                     # extracted = extract_valid_answer(res, remaining[idx]['options'])  # only strict match
                     extracted = safe_extract_answer(res, queries[idx]['options'])  # 扩充抽取答案的策略 + 改为全局索引引用
                     if extracted:
                         valid_flags[idx] = True
                     # else:
-                    #     print(f"[WARN] Not matched: res={res}, options={queries[idx]['options']}")
+                        # print(f"[WARN] Not matched: res={res}, options={queries[idx]['options']}")
 
                 # 无论成功失败，都算作完成一轮尝试，进度条更新
                 # pbar.update(len(batch_prompts))
 
                 batch_prompts, batch_images, batch_indices = [], [], []
-                # batch_options = []  # 自己加的
 
         # 构造下一轮 retry
-        new_remaining = []
-        new_index_map = []
+        new_remaining, new_index_map = [], []
         for i, valid in zip(current_index_map, valid_flags):
             if not valid and retry_counts[i] < queries[i]['max_retries']:
                 new_remaining.append(queries[i])
@@ -219,8 +224,11 @@ def run_batch_query_with_retry(queries, inference_func, model_dict, dataset, arg
 
     # pbar.close()
 
-    print(f"\n[INFO] Inference finished. Valid: {sum(valid_flags)} / {total_queries}")
-    return final_outputs, valid_flags, retry_counts
+    # print(f"\n[INFO] Inference finished. Valid: {sum(valid_flags)} / {total_queries}")  # 汇报 valid 情况
+    # return final_outputs, valid_flags, retry_counts
+    return final_outputs, valid_flags, retry_counts, {
+    'failed_queries': failed_query_count,
+    'failed_img_ids': list(failed_img_ids)}
 
 def aggregate_results(queries, outputs, valids, retries):
     """
@@ -265,13 +273,12 @@ def main(args):
     print("[INFO] Loading model...")
     model_dict = load_target_model(args)
     model_dict["image_cache"] = ImageCache(max_size=32)
+    inference_func = INFERENCE_FUNCS[args.target_model]
 
     # initialize logger 记录所有参数，包括target model 的部分设置 (e.g., llama adapter_dir)
     log_filename = os.path.join(save_dir, 'log.txt')
     logger = init_logger(log_filename, logging.INFO)
     logger.info("args=\n%s", json.dumps(args.__dict__, indent=4))
-
-    inference_func = INFERENCE_FUNCS[args.target_model]
 
     # save address
     start_pos = 0 
@@ -312,18 +319,26 @@ def main(args):
     total_queries = len(queries)
     num_blocks = ceil(total_queries / args.query_block_size)
 
-    # for block_idx in range(num_blocks):
+    total_failed_queries = 0
+    all_failed_img_ids = set()
+
     for block_idx in tqdm(range(num_blocks), desc="[Blocks Progress]"):
         q_start = block_idx * args.query_block_size
         q_end = min((block_idx + 1) * args.query_block_size, total_queries)
         # print(f"\n[INFO] Running block {block_idx + 1}/{num_blocks} | Queries {q_start} ~ {q_end}")
 
         query_block = queries[q_start:q_end]
-        outputs, valids, retries = run_batch_query_with_retry(query_block, inference_func, model_dict, dataset, args)
+        # outputs, valids, retries = run_batch_query_with_retry(query_block, inference_func, model_dict, dataset, args)
+        outputs, valids, retries, block_stat = run_batch_query_with_retry(query_block, inference_func, model_dict, dataset, args)
+        total_failed_queries += block_stat['failed_queries']
+        all_failed_img_ids.update(block_stat['failed_img_ids'])
+        result_map.update(aggregate_results(query_block, outputs, valids, retries))
 
-        block_result_map = aggregate_results(query_block, outputs, valids, retries)
-        result_map.update(block_result_map)
-
+    print(f"[SUMMARY] Total failed queries: {total_failed_queries}")
+    print(f"[SUMMARY] Unique images affected: {len(all_failed_img_ids)} / {dataset_length}")
+    logger.info(f"[SUMMARY] Total failed queries: {total_failed_queries}")
+    logger.info(f"[SUMMARY] Unique images affected: {len(all_failed_img_ids)} / {dataset_length}")
+    logger.info(f"[SUMMARY] Unique images affected index: {all_failed_img_ids}")
 
     final_result = []
     for i, img_entry in enumerate(confuser_res):
@@ -392,6 +407,3 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
     main(args)
-
-
-

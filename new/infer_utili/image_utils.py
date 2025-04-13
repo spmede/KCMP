@@ -1,4 +1,5 @@
 
+import random
 import requests
 import numpy as np
 import pycocotools.mask as maskUtils  # 用于解码 RLE 格式
@@ -124,3 +125,61 @@ def turn_grayscale_image(input_img, manner='1'):
         gray_image = Image.fromarray(gray_array)
 
     return gray_image
+
+def reorder_image_patches(image, n=2, perm=None):
+    """
+    Reorder patches in an image split into n x n grid.
+
+    Args:
+        image (PIL.Image): input image.
+        n (int): number of patches per row and column (e.g. n=2 → 2x2 grid).
+        perm (list[int] or None): permutation list of length n*n.
+                                  If None, a random non-identity permutation is generated.
+
+    Returns:
+        new_image (PIL.Image): reassembled image with reordered patches.
+        applied_perm (list[int]): permutation actually used.
+    """
+    width, height = image.size
+    patch_w = width // n
+    patch_h = height // n
+
+    # Extract patches
+    patches = []
+    for row in range(n):
+        for col in range(n):
+            left = col * patch_w
+            upper = row * patch_h
+            right = (col + 1) * patch_w
+            lower = (row + 1) * patch_h
+            patch = image.crop((left, upper, right, lower))
+            patches.append(patch)
+
+    # Generate random non-identity permutation if needed
+    total_patches = n * n
+    identity = list(range(total_patches))
+    if perm is None:
+        perm = identity[:]
+        while True:
+            random.shuffle(perm)
+            if perm != identity:
+                break
+
+    if len(perm) != total_patches:
+        raise ValueError(f"Permutation must be of length {total_patches}, got {len(perm)}")
+
+    reordered_patches = [patches[i] for i in perm]
+
+    # Create new blank image
+    new_image = Image.new("RGB", (width, height))
+
+    # Paste reordered patches
+    for idx, patch in enumerate(reordered_patches):
+        row = idx // n
+        col = idx % n
+        new_image.paste(patch, (col * patch_w, row * patch_h))
+
+    return new_image, perm
+
+
+

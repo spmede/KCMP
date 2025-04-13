@@ -4,7 +4,7 @@ from datasets import load_dataset
 
 
 def get_data(data_specific):
-    used_dataset = load_dataset("/data1/yinjinhua/LMdataset/VL-MIA-image", data_specific, split='train')
+    used_dataset = load_dataset("/data/yinjinhua/LMdataset/VL-MIA-image", data_specific, split='train')
     # img_Flickr (600), img_Flickr_10k, img_Flickr_2k, img_dalle (592)
     dataset_length = len(used_dataset)
     # print(dataset_length)

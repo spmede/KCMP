@@ -1,0 +1,28 @@
+2025-04-11 02:45:46,267 - INFO - args=
+{
+    "data_name": "img_dalle",
+    "target_model": "llama_adapter_v2",
+    "gpu_id": 0,
+    "temperature": 0.3,
+    "top_p": 0.9,
+    "num_gen_token": 32,
+    "ask_obj_prompt_id": 1,
+    "ask_color_prompt_id": 2,
+    "confuser_json": "/public/bupt_data/wangwd/yinjinhua/NLP/5-VLLM_MIA/12-batch_codebase/ObjColor_exp/confuser_res/img_dalle/confuser_res.json",
+    "ask_type": "random_choice",
+    "ask_time": 6,
+    "batch_size": 16,
+    "query_block_size": 50,
+    "adapter_dir": "/public/bupt_data/wangwd/yinjinhua/NLP/5-VLLM_MIA/target_model/model_weight/LORA-BIAS-7B-v21.pth"
+}
+2025-04-11 03:42:04,062 - INFO - [INFO] Inference complete. Consuming 56min 17sec. Results saved to: ObjColor_exp/res/img_dalle/llama_adapter_v2/random_choice/temp_0.3_askTime_6-20250411-024524/res_start_0_end_592.json
+2025-04-11 03:42:04,062 - INFO - 
+>>> AUC Summary (ignore_invalid=False)
+2025-04-11 03:42:04,141 - INFO -   ask_obj    | AUC: 0.5035 | label0: 293 | label1: 292
+2025-04-11 03:42:04,141 - INFO -   ask_color  | AUC: 0.5344 | label0: 283 | label1: 284
+2025-04-11 03:42:04,142 - INFO -   both       | AUC: 0.5296 | label0: 293 | label1: 292
+2025-04-11 03:42:04,142 - INFO - 
+>>> AUC Summary (ignore_invalid=True)
+2025-04-11 03:42:04,205 - INFO -   ask_obj    | AUC: 0.4646 | label0: 115 | label1: 119
+2025-04-11 03:42:04,205 - INFO -   ask_color  | AUC: 0.5112 | label0: 128 | label1: 135
+2025-04-11 03:42:04,205 - INFO -   both       | AUC: 0.4528 | label0: 63 | label1: 59

@@ -1,0 +1,17 @@
+2025-04-11 01:26:12,508 - INFO - args=
+{
+    "data_name": "img_Flickr",
+    "target_model": "llama_adapter_v2",
+    "gpu_id": 0,
+    "temperature": 0.3,
+    "top_p": 0.9,
+    "num_gen_token": 32,
+    "ask_obj_prompt_id": 1,
+    "ask_color_prompt_id": 1,
+    "confuser_json": "/public/bupt_data/wangwd/yinjinhua/NLP/5-VLLM_MIA/12-batch_codebase/ObjColor_exp/confuser_res/img_Flickr/confuser_res.json",
+    "ask_type": "random_choice",
+    "ask_time": 4,
+    "batch_size": 24,
+    "query_block_size": 50,
+    "adapter_dir": "/public/bupt_data/wangwd/yinjinhua/NLP/5-VLLM_MIA/target_model/model_weight/LORA-BIAS-7B-v21.pth"
+}
