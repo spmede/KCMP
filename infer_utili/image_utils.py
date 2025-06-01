@@ -2,7 +2,7 @@
 import random
 import requests
 import numpy as np
-import pycocotools.mask as maskUtils  # 用于解码 RLE 格式
+import pycocotools.mask as maskUtils 
 
 from io import BytesIO
 from PIL import Image, ImageDraw
@@ -25,35 +25,30 @@ def safe_prompts(prompts):
 
 
 def mask_object(input_img, sam_info):
-    '''对图像中某物体施加黑色 mask'''
+    '''add balck mask'''
 
     # get box info
     box_info = sam_info['bbox']
-    # 转换为可编辑模式
     masked_image = input_img.copy()
     draw = ImageDraw.Draw(masked_image)
 
-    # 获取图片尺寸
-    # img_width, img_height = input_img.size
 
-    # 选择正确的 fill 颜色
-    if input_img.mode == "L":  # 灰度图像
+    if input_img.mode == "L": 
         fill_color = 0
-    elif input_img.mode == "RGB":  # RGB 图像
+    elif input_img.mode == "RGB":
         fill_color = (0, 0, 0)
-    elif input_img.mode == "RGBA":  # RGBA 图像
+    elif input_img.mode == "RGBA":
         fill_color = (0, 0, 0, 255)
     else:
         raise ValueError(f"Unsupported image mode: {input_img.mode}")
     
-    # 绘制黑色矩形 (掩盖物体)
     draw.rectangle(box_info, fill=fill_color)
     
     return masked_image
 
 
 def box_object(input_img, sam_info, box_color='red', box_width=3):
-    '''返回 box 框住物体的图像'''
+    '''box an object'''
 
     # get box info
     box_info = sam_info['bbox']
@@ -67,49 +62,21 @@ def box_object(input_img, sam_info, box_color='red', box_width=3):
 
 
 def outline_object(input_img, sam_info, outline_color='red', line_width=3):
-    '''返回 对物体轮廓描边 的图像'''
+    '''outline an object'''
 
-    # 解码 segmentation mask
     mask = maskUtils.decode(sam_info['segmentation'])  # Binary mask (0: background, 1: object)
-    
-    # 找到轮廓坐标 (返回的是多个轮廓)
     contours = measure.find_contours(mask, 0.5)  # Threshold at 0.5 to get the boundary
-
-    # 复制输入图像并创建绘图对象
     outlined_image = input_img.copy()
     draw = ImageDraw.Draw(outlined_image)
 
-    # 绘制轮廓
     for contour in contours:
-        contour = [(int(x), int(y)) for y, x in contour]  # 转换为整数坐标
+        contour = [(int(x), int(y)) for y, x in contour]  
         draw.line(contour, fill=outline_color, width=line_width)
 
     return outlined_image
 
 
-def concatenate_images_horizontal(input_images, dist_images=10):
-    '''横向拼接 2 张图片'''
-    # calc total width of imgs + dist between them
-    total_width = sum(img.width for img in input_images) + dist_images * (len(input_images) - 1)
-    # calc max height from imgs
-    height = max(img.height for img in input_images)
-
-    # create new img with calculated dimensions, black bg
-    new_img = Image.new('RGB', (total_width, height), (0, 0, 0))
-
-    # init var to track current width pos
-    current_width = 0
-    for img in input_images:
-        # paste img in new_img at current width
-        new_img.paste(img, (current_width, 0))
-        # update current width for next img
-        current_width += img.width + dist_images
-
-    return new_img
-
-
 def turn_grayscale_image(input_img, manner='1'):
-    '''图片转灰度图'''
 
     # method 1
     if manner == 'default':
@@ -125,61 +92,3 @@ def turn_grayscale_image(input_img, manner='1'):
         gray_image = Image.fromarray(gray_array)
 
     return gray_image
-
-def reorder_image_patches(image, n=2, perm=None):
-    """
-    Reorder patches in an image split into n x n grid.
-
-    Args:
-        image (PIL.Image): input image.
-        n (int): number of patches per row and column (e.g. n=2 → 2x2 grid).
-        perm (list[int] or None): permutation list of length n*n.
-                                  If None, a random non-identity permutation is generated.
-
-    Returns:
-        new_image (PIL.Image): reassembled image with reordered patches.
-        applied_perm (list[int]): permutation actually used.
-    """
-    width, height = image.size
-    patch_w = width // n
-    patch_h = height // n
-
-    # Extract patches
-    patches = []
-    for row in range(n):
-        for col in range(n):
-            left = col * patch_w
-            upper = row * patch_h
-            right = (col + 1) * patch_w
-            lower = (row + 1) * patch_h
-            patch = image.crop((left, upper, right, lower))
-            patches.append(patch)
-
-    # Generate random non-identity permutation if needed
-    total_patches = n * n
-    identity = list(range(total_patches))
-    if perm is None:
-        perm = identity[:]
-        while True:
-            random.shuffle(perm)
-            if perm != identity:
-                break
-
-    if len(perm) != total_patches:
-        raise ValueError(f"Permutation must be of length {total_patches}, got {len(perm)}")
-
-    reordered_patches = [patches[i] for i in perm]
-
-    # Create new blank image
-    new_image = Image.new("RGB", (width, height))
-
-    # Paste reordered patches
-    for idx, patch in enumerate(reordered_patches):
-        row = idx // n
-        col = idx % n
-        new_image.paste(patch, (col * patch_w, row * patch_h))
-
-    return new_image, perm
-
-
-

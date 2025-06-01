@@ -5,7 +5,7 @@ def load_target_model(args):
         from llava.mm_utils import get_model_name_from_path
         from infer_utili.llava_infer import load_conversation_template
 
-        llava_model_add = '/data/yinjinhua/LMmodel/liuhaotian_llava-v1.5-7b'
+        llava_model_add = '/data/LMmodel/liuhaotian_llava-v1.5-7b' # please change to the actual model location
         llava_model_name = get_model_name_from_path(llava_model_add)
         conv_mode = load_conversation_template(llava_model_name)
         llava_tokenizer, llava_model, llava_image_processor, _ = load_pretrained_model(
@@ -23,7 +23,7 @@ def load_target_model(args):
         from minigpt4.common.registry import registry
         from infer_utili.minigpt4_infer import CONV_VISION_Vicuna0, CONV_VISION_LLama2
 
-        args.cfg_path = "/data/yinjinhua/NLP/5-VLLM_MIA/target_model/VL-MIA/MiniGPT-4/eval_configs/minigpt4_llama2_eval.yaml"
+        args.cfg_path = "/data/target_model/VL-MIA/MiniGPT-4/eval_configs/minigpt4_llama2_eval.yaml"  # please change to the actual model location
         args.options = None
         cfg = Config(args)
         model_cfg = cfg.model_cfg
@@ -44,8 +44,8 @@ def load_target_model(args):
 
     elif args.target_model == 'llama_adapter_v2':
         import llama  # local import
-        llama_dir = '/data/yinjinhua/LMmodel/yangchen_llama2-7B'
-        adapter_path = '/data/yinjinhua/NLP/5-VLLM_MIA/target_model/model_weight/LORA-BIAS-7B-v21.pth'
+        llama_dir = '/data/LMmodel/llama2-7B'  # please change to the actual model location
+        adapter_path = '/data/target_model/model_weight/LORA-BIAS-7B-v21.pth'  # please change to the actual model location
         args.adapter_dir = adapter_path
 
         model, preprocess = llama.load(
