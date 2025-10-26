@@ -2,7 +2,7 @@
 ## Black-Box Membership Inference Attack for LVLMs via Prior Knowledge-Calibrated Memory Probing
 
 This repository contains the complete source code, dataset references, and documentation to facilitate the reproduction, application, and further development of our **KCMP** method.  
-The implementation is written in Python. The paper
+The implementation is written in Python.
 
 ---
 ## 🚀 System Requirements & Environment Setup
