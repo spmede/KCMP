@@ -1,0 +1,9 @@
+{
+    "dataset_name": "DAM-IID-dataset",
+    "dataset_size": 400,
+    "class_labels": [
+        "negative",
+        "positive"
+    ],
+    "num_classes": 2
+}
