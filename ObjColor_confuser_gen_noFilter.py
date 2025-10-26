@@ -117,7 +117,7 @@ def get_true_obj_color(input_img, single_sam_res, args, ask_time=5, max_retries=
                 # Check if model reported multi-color
                 if color == "multicolor":
                     # print("Model indicated MULTICOLOR object; skipping.")
-                    return None, []  # immediately return → avoid invalid color
+                    return None, []  # immediately return, avoid invalid color
                 potential_colors.append(color)
 
         valid_colors = [c for c in potential_colors]
@@ -141,15 +141,15 @@ def main(args):
     # get dataset
     used_dataset, dataset_length = get_data(args.data_name)
 
-    # read saved image analysis 
-    result = read_json(f'ObjColor_exp/img_analysis_res/{args.data_name}_by_gpt-4o-mini_mode_default/res.json')
+    # read saved image analysis, e.g., vllm_APImodel is 'gpt-4o-mini' in 'ObjColor_image_analysis.py'
+    result = read_json(f'ObjColor_exp/img_analysis_res/{args.data_name}_by_gpt-4o-mini/res.json')
     
     # save add
-    save_dir = Path(f"ObjColor_exp/confuser_res/noFilter/{args.data_name}_by_{args.vllm_APImodel}/{time.strftime('%Y%m%d-%H%M%S')}")
+    save_dir = Path(f"ObjColor_exp/confuser_res/noFilter/{args.data_name}_by_{args.vllm_APImodel}")
     save_dir.mkdir(parents=True, exist_ok=True)
 
     start_pos, end_pos = 0, dataset_length
-    save_path = save_dir / f'res_start_{start_pos}_end_{end_pos}.json'
+    save_path = save_dir / f'res.json'
 
     # initialize logger and record all parameters
     log_filename = os.path.join(save_dir, 'log.txt')

@@ -356,9 +356,9 @@ def main(args):
 
     # save directory setting
     if args.ask_type == 'ordered_choice':
-        save_dir = Path(f"ObjColor_exp/traverse_res/{args.filter_apply}/{args.data_name}/{args.target_model}/{args.ask_type}/temp_{args.temperature}-{time.strftime('%Y%m%d-%H%M%S')}")
+        save_dir = Path(f"ObjColor_exp/traverse_res/{args.filter_apply}/{args.data_name}/{args.target_model}/{args.ask_type}/temp_{args.temperature}")
     elif args.ask_type == 'random_choice':
-        save_dir = Path(f"ObjColor_exp/traverse_res/{args.filter_apply}/{args.data_name}/{args.target_model}/{args.ask_type}/temp_{args.temperature}_askTime_{args.ask_time}-{time.strftime('%Y%m%d-%H%M%S')}")
+        save_dir = Path(f"ObjColor_exp/traverse_res/{args.filter_apply}/{args.data_name}/{args.target_model}/{args.ask_type}/temp_{args.temperature}_askTime_{args.ask_time}")
     save_dir.mkdir(parents=True, exist_ok=True)
 
     # get dataset
@@ -465,7 +465,14 @@ def parse_args():
     parser.add_argument('--ask_obj_color_prompt_id', type=int, default=1)
     parser.add_argument('--confuser_json', type=str, required=True, help='please provide the directory of confuser.json file')
     parser.add_argument('--filter_apply', type=str, choices=['withFilter', 'noFilter'], required=True, help='application of filter mechanism, must align with confuser_json') 
-    parser.add_argument('--ask_type', type=str, default='ordered_choice', choices=['ordered_choice', 'random_choice'])
+    parser.add_argument('--ask_type', type=str, default='ordered_choice', 
+                                                choices=['ordered_choice', 'random_choice'],
+                                                help=(
+                                                    "Option order strategy: "
+                                                    "'ordered_choice' cycles the correct answer through all 4 positions to remove bias; "
+                                                    "'random_choice' randomly shuffles options each time (controlled by --ask_time)."
+                                                    )
+                                                )
     parser.add_argument('--ask_time', type=int, default=8)
     parser.add_argument('--batch_size', type=int, default=10)
     parser.add_argument('--query_block_size', type=int, default=30)

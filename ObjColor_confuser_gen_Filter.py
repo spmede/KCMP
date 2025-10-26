@@ -230,11 +230,11 @@ def main(args):
     # get dataset
     used_dataset, dataset_length = get_data(args.data_name)
 
-    # get confuser res 
-    confuser_res = read_json(f'ObjColor_exp/confuser_res/noFilter/{args.data_name}_by_gpt-4o-mini_mode_default/res.json')
+    # get confuser res, e.g., vllm_APImodel is 'gpt-4o-mini' in 'ObjColor_confuser_gen_noFilter.py'
+    confuser_res = read_json(f'ObjColor_exp/confuser_res/noFilter/{args.data_name}_by_gpt-4o-mini/res.json')
     
     # save add
-    save_dir = Path(f"ObjColor_exp/confuser_res/withFilter/{args.data_name}_by_{args.vllm_APImodel}/{time.strftime('%Y%m%d-%H%M%S')}")
+    save_dir = Path(f"ObjColor_exp/confuser_res/withFilter/{args.data_name}_by_{args.vllm_APImodel}")
     save_dir.mkdir(parents=True, exist_ok=True)
     # initialize logger
     log_filename = os.path.join(save_dir, 'log.txt')
@@ -242,7 +242,7 @@ def main(args):
     logger.info("args=\n%s", json.dumps(args.__dict__, indent=4))
 
     start_pos, end_pos = 0, dataset_length
-    save_path = save_dir / f'res_start_{start_pos}_end_{end_pos}.json'
+    save_path = save_dir / f'res.json'
 
     # timing
     start_time = time.time()

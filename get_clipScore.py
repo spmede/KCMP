@@ -61,7 +61,7 @@ def main(args):
 
     prompt = 'Describe this image in detail.'
 
-    # get confuser result
+    # get confuser result, e.g., vllm_APImodel is 'gpt-4o-mini' in 'ObjColor_confuser_gen_noFilter.py'
     confuser_add = f'ObjColor_exp/confuser_res/{args.filter_apply}/{args.data_name}_by_gpt-4o-mini/res.json'
     confuser_res = read_json(confuser_add)
 

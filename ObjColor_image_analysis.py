@@ -24,18 +24,17 @@ PROMPT_obj_analysis = (
         'Answer:'
         )
 
-
 def main(args):
 
     # get dataset
     used_dataset, dataset_length = get_data(args.data_name)
 
     # save add
-    save_dir = Path(f"ObjColor_exp/img_analysis_res/{args.data_name}_by_{args.vllm_APImodel}_mode_{args.mode}/{time.strftime('%Y%m%d-%H%M%S')}")
+    save_dir = Path(f"ObjColor_exp/img_analysis_res/{args.data_name}_by_{args.vllm_APImodel}")
     save_dir.mkdir(parents=True, exist_ok=True)
 
     start_pos, end_pos = 0, dataset_length
-    save_path = save_dir / f'res_start_{start_pos}_end_{end_pos}.json'
+    save_path = save_dir / f'res.json'
 
     # initialize logger and record all parameters
     log_filename = os.path.join(save_dir, 'log.txt')
@@ -63,13 +62,11 @@ def main(args):
         while retry_count < max_retry:
             try:
                 # Step 1: analyse image and get object name
-
                 object_name = apiCall_img(current_image, 
                                           PROMPT_obj_analysis, 
                                           temperature=0.6,
                                           num_gen_token=64, 
-                                          model=args.vllm_APImodel, 
-                                          mode=args.mode)
+                                          model=args.vllm_APImodel)
                 object_name_refined = clean_description(object_name)
 
                 # is no objects are detected (object_name_refined is empty), sam_result=None

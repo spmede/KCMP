@@ -60,7 +60,6 @@ def box_object(input_img, sam_info, box_color='red', box_width=3):
 
     return image_with_box
 
-
 def outline_object(input_img, sam_info, outline_color='red', line_width=3):
     '''outline an object'''
 
@@ -75,6 +74,25 @@ def outline_object(input_img, sam_info, outline_color='red', line_width=3):
 
     return outlined_image
 
+def concatenate_images_horizontal(input_images, dist_images=10):
+    '''横向拼接 2 张图片'''
+    # calc total width of imgs + dist between them
+    total_width = sum(img.width for img in input_images) + dist_images * (len(input_images) - 1)
+    # calc max height from imgs
+    height = max(img.height for img in input_images)
+
+    # create new img with calculated dimensions, black bg
+    new_img = Image.new('RGB', (total_width, height), (0, 0, 0))
+
+    # init var to track current width pos
+    current_width = 0
+    for img in input_images:
+        # paste img in new_img at current width
+        new_img.paste(img, (current_width, 0))
+        # update current width for next img
+        current_width += img.width + dist_images
+
+    return new_img
 
 def turn_grayscale_image(input_img, manner='1'):
 
